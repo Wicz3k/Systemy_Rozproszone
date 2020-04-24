@@ -92,18 +92,15 @@ public class Consumer {
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                     String message = new String(body, "UTF-8");
                     System.out.println("Received: " + message);
-                    try {
-                        Thread.sleep(10000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+
                     String response = "Done: " + message + " by " + consumerName;
                     if(properties!=null && properties.getReplyTo()!=null) {
                         AMQP.BasicProperties props = new AMQP.BasicProperties
                                 .Builder()
-                                .appId(consumerName)
+                                .appId("C-" + consumerName)
+                                .messageId(message + "-r")
                                 .build();
-                        channel.basicPublish("", properties.getReplyTo(), props, response.getBytes("UTF-8"));
+                        channel.basicPublish(Common.JOBS_EXCHANGE_NAME, properties.getReplyTo(), props, response.getBytes("UTF-8"));
                     }
                     System.out.println("End: " + message);
                     channel.basicAck(envelope.getDeliveryTag(), false);

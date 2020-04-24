@@ -48,6 +48,8 @@ public class Producer {
 
         String callbackQueueName = channel.queueDeclare().getQueue();
 
+        channel.queueBind(callbackQueueName, Common.JOBS_EXCHANGE_NAME, callbackQueueName);
+
         channel.basicConsume(callbackQueueName, messagesHandler);
         return callbackQueueName;
     }
@@ -102,7 +104,8 @@ public class Producer {
         AMQP.BasicProperties props = new AMQP.BasicProperties
                 .Builder()
                 .replyTo(callbackQueueName)
-                .appId(producerName)
+                .appId("P-" + producerName)
+                .messageId(message)
                 .build();
         channel.basicPublish(Common.JOBS_EXCHANGE_NAME, key, props, message.getBytes("UTF-8"));
         System.out.println("Sent: " + message);
