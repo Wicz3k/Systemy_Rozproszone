@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "sr.grpc.gen";
+option java_outer_classname = "StreamingNames";
+
+package streaming;
+
+enum Channel{
+    CH0 = 0;
+    CH1 = 1;
+    CH2 = 2;
+    CH3 = 3;
+    CH4 = 4;
+}
+
+message Task
+{
+  Channel channel = 1;
+}
+
+message NameMessage{
+    Channel channel = 1;
+    float temperature = 2;
+    int32 numberOfPeoples = 3;
+    repeated string Information = 4;
+}
+
+service NameStream{
+    rpc subscribeChannel(Task) returns(stream NameMessage);
+}
