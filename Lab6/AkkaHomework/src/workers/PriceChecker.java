@@ -20,7 +20,7 @@ public class PriceChecker extends AbstractActor {
                     Random rand = new Random();
                     int time = rand.nextInt(400)+100;
                     context().actorOf(Props.create(WakeUpWorker.class), "wake").tell(time, getSelf());
-                    throw new Exception();
+                    //throw new Exception();
                 })
                 .match(WakeUpMessage.class, f-> {
                     context().stop(getSender());
