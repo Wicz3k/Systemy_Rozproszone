@@ -6,13 +6,11 @@ import akka.event.LoggingAdapter;
 import akka.japi.pf.DeciderBuilder;
 import common.StopMeMessage;
 import common.WakeUpMessage;
-import org.w3c.dom.ls.LSOutput;
 import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.TimeUnit;
 
 import static akka.actor.SupervisorStrategy.restart;
-import static akka.actor.SupervisorStrategy.resume;
 
 public class PriceComparer extends AbstractActor {
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);

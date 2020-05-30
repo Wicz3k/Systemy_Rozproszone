@@ -4,6 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import common.CreateActorMessage;
 import common.StopMeMessage;
 
 public class MessageConsumer extends AbstractActor {
@@ -14,6 +15,11 @@ public class MessageConsumer extends AbstractActor {
         return receiveBuilder()
                 .match(String.class, s -> {
                     context().actorOf(Props.create(PriceComparer.class)).tell(s, getSender());
+                })
+                .match(CreateActorMessage.class, m->{
+                    for(int i = 0; i<m.getAmount(); i++){
+                        context().actorOf(Props.create(LocalClient.class, m.getProduct(), m.getAsks()));
+                    }
                 })
                 .match(StopMeMessage.class, s ->{
                     if(!getSender().isTerminated()){
