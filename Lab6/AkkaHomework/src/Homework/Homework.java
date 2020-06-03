@@ -1,3 +1,6 @@
+package Homework;
+
+import Database.Database;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
@@ -9,8 +12,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 public class Homework {
-    public static void main(String[] args) throws Exception {
+    public static Database db;
 
+    public static void main(String[] args) throws Exception {
+        db = new Database();
+        db.createNewTable();
         // create actor system & actors
         final ActorSystem system = ActorSystem.create("local_system");
         final ActorRef actor = system.actorOf(Props.create(MessageConsumer.class), "mess");

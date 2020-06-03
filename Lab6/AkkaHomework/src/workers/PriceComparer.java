@@ -4,6 +4,7 @@ import akka.actor.*;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.japi.pf.DeciderBuilder;
+import common.DBQueryMessage;
 import common.StopMeMessage;
 import common.WakeUpMessage;
 import scala.concurrent.duration.Duration;
@@ -17,6 +18,8 @@ public class PriceComparer extends AbstractActor {
     private float val = 0;
     private boolean isFinished = false;
     private ActorRef sender = null;
+    private int asks = -1;
+    private boolean both = false;
 
     @Override
     public Receive createReceive() {
@@ -26,36 +29,57 @@ public class PriceComparer extends AbstractActor {
                     context().actorOf(Props.create(WakeUpWorker.class), "wake").tell(300, getSelf());
                     context().actorOf(Props.create(PriceChecker.class), "comparer1").tell(s, getSelf());
                     context().actorOf(Props.create(PriceChecker.class),"comparer2").tell(s, getSelf());
+                    context().actorOf(Props.create(DatabaseWorker.class),"database").tell(s, getSelf());
                 })
                 .match(Float.class, f->{
                     context().stop(getSender());
                     if(!isFinished) {
                         if (val <= 0) {
                             val = f;
-                        } else {
-                            isFinished = true;
-                            float res = Math.min(val, f);
-                            sender.tell(res, null);
-                            context().parent().tell(new StopMeMessage(), getSelf());
+                        } else if(asks < 0) {
+                            val = Math.min(val, f);
+                            both = true;
+                        }
+                        else{
+                            makeResponse();
                         }
                     }
+                })
+                .match(DBQueryMessage.class, m ->{
+                    if(!isFinished) {
+                        this.asks = m.getAsks();
+                        if(both){
+                            makeResponse();
+                        }
+                    }
+                })
+                .match(StopMeMessage.class, m ->{
+                    context().stop(getSender());
                 })
                 .match(WakeUpMessage.class, f-> {
                     context().stop(getSender());
                     if(!isFinished){
-                        isFinished = true;
-                        if(val<=0){
-                            sender.tell("Could not get any response", null);
-                        }
-                        else{
-                            sender.tell(val, null);
-                        }
-                        context().parent().tell(new StopMeMessage(), getSelf());
+                        makeResponse();
                     }
                 })
                 .matchAny(o -> log.info("received unknown message: type: " + o.getClass() + " value: " + o.toString()))
                 .build();
     }
+
+    private void makeResponse() {
+        isFinished = true;
+        String asksMess = String.valueOf(asks);
+        if(asks<0){
+            asksMess = "Could not get any response";
+        }
+        String priceMess = String.valueOf(val);
+        if(val<=0){
+            priceMess = "Could not get any response";
+        }
+        sender.tell("price: " + priceMess + " asks: " + asksMess, null);
+        context().parent().tell(new StopMeMessage(), getSelf());
+    }
+
     private static SupervisorStrategy strategy
             = new OneForOneStrategy(0, Duration.create(10, TimeUnit.MILLISECONDS), DeciderBuilder.
             matchAny(o -> restart()).
